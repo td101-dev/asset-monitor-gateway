@@ -64,9 +64,9 @@ void app_main(void) {
         return;
     }
 
-    nrf24_set_pa_level(&radio, NRF24_PA_HIGH);
+    nrf24_set_pa_level(radio, NRF24_PA_HIGH);
 
-    nrf24_set_data_rate(&radio, NRF24_DATARATE_1MBPS);
+    nrf24_set_data_rate(radio, NRF24_DATARATE_1MBPS);
 
     if (!nrf24_is_chip_connected(radio)) {
         ESP_LOGE(TAG, "nRF24L01+ not responding on SPI — check wiring/power");
