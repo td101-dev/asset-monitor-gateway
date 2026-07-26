@@ -5,7 +5,7 @@
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
   "idf.portWin": "COM4",
-  "idf.currentSetup": "C:\\esp\\v6.0.2\\esp-idf",
+  "idf.currentSetup": "C:/Espressif/frameworks/esp-idf-v5.5.4-2/",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32"
   },
