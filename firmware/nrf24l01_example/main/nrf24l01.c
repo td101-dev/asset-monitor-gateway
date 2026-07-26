@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "nrf24l01.h"
+#include "../include/nrf24l01.h"
 #include "driver/gpio.h"
 #include "esp_rom_sys.h"   /* esp_rom_delay_us() */
 

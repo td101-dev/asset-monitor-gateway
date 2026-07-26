@@ -31,19 +31,19 @@ jobs:
 
       - name: Check code formatting
         run: |
-          find src include -name '*.c' -o -name '*.h' | xargs clang-format --dry-run --Werror
+          find main include -name '*.c' -o -name '*.h' | xargs clang-format --dry-run --Werror
 
       - name: Run cppcheck (static analysis)
         run: |
           cppcheck --enable=all --error-exitcode=1 \
             --suppress=missingIncludeSystem \
             --inline-suppr \
-            -I include src
+            -I include main
 
       - name: MISRA-C check (informational only)
         continue-on-error: true
         run: |
-          cppcheck --addon=misra --enable=all -I include src 2> misra-report.txt || true
+          cppcheck --addon=misra --enable=all -I include main 2> misra-report.txt || true
 
       - name: Upload MISRA report
         uses: actions/upload-artifact@v4
@@ -229,7 +229,7 @@ jobs:
       - name: Build host tests with ASan/UBSan (-O0)
         run: |
           gcc -O0 -fsanitize=address,undefined -g -I include \
-            src/*.c test/host/*.c -o test_host_asan
+            main/*.c test/host/*.c -o test_host_asan
       - name: Run under sanitizers
         run: ./test_host_asan
 
@@ -246,7 +246,7 @@ jobs:
   #     - name: Build fuzz harness with libFuzzer
   #       run: |
   #         clang -fsanitize=fuzzer,address -g -I include \
-  #           src/radio_link_parser.c test/fuzz/fuzz_radio_link.c -o fuzz_radio_link
+  #           main/radio_link_parser.c test/fuzz/fuzz_radio_link.c -o fuzz_radio_link
 
   #     - name: Run fuzzer (time-boxed)
   #       run: ./fuzz_radio_link -max_total_time=120
