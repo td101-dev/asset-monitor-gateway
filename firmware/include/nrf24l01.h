@@ -24,20 +24,21 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
+#include <stdint.h>
+
 #include "driver/spi_master.h"
+#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define NRF24_MAX_PAYLOAD_SIZE   32
-#define NRF24_ADDR_MIN_WIDTH     3
-#define NRF24_ADDR_MAX_WIDTH     5
-#define NRF24_PIPE_COUNT         6
+#define NRF24_MAX_PAYLOAD_SIZE 32
+#define NRF24_ADDR_MIN_WIDTH   3
+#define NRF24_ADDR_MAX_WIDTH   5
+#define NRF24_PIPE_COUNT       6
 
 typedef enum {
     NRF24_DATARATE_250KBPS = 0,
@@ -46,10 +47,10 @@ typedef enum {
 } nrf24_datarate_t;
 
 typedef enum {
-    NRF24_PA_MIN = 0,   /* -18 dBm */
-    NRF24_PA_LOW,       /* -12 dBm */
-    NRF24_PA_HIGH,      /*  -6 dBm */
-    NRF24_PA_MAX,       /*   0 dBm */
+    NRF24_PA_MIN = 0, /* -18 dBm */
+    NRF24_PA_LOW,     /* -12 dBm */
+    NRF24_PA_HIGH,    /*  -6 dBm */
+    NRF24_PA_MAX,     /*   0 dBm */
 } nrf24_pa_level_t;
 
 typedef enum {
@@ -59,29 +60,29 @@ typedef enum {
 } nrf24_crc_t;
 
 typedef struct {
-    spi_host_device_t spi_host;    /* e.g. SPI2_HOST */
+    spi_host_device_t spi_host; /* e.g. SPI2_HOST */
     int pin_sck;
     int pin_miso;
     int pin_mosi;
     int pin_csn;
     int pin_ce;
-    int spi_clock_hz;              /* <= 10,000,000; 4,000,000 is a safe default */
+    int spi_clock_hz; /* <= 10,000,000; 4,000,000 is a safe default */
 
-    uint8_t channel;                /* 0-125 -> 2400 + channel MHz */
-    uint8_t payload_size;           /* 1-32 bytes, fixed-length payload */
-    uint8_t address_width;          /* 3-5 bytes */
+    uint8_t channel;       /* 0-125 -> 2400 + channel MHz */
+    uint8_t payload_size;  /* 1-32 bytes, fixed-length payload */
+    uint8_t address_width; /* 3-5 bytes */
     nrf24_datarate_t data_rate;
     nrf24_pa_level_t pa_level;
     nrf24_crc_t crc_length;
 
-    uint8_t retry_delay_x250us;     /* 0-15 -> (value+1) * 250us between retries */
-    uint8_t retry_count;            /* 0-15, 0 disables auto-retransmit */
+    uint8_t retry_delay_x250us; /* 0-15 -> (value+1) * 250us between retries */
+    uint8_t retry_count;        /* 0-15, 0 disables auto-retransmit */
 
-    bool auto_ack_enabled;          /* enable hardware ACK on all pipes */
+    bool auto_ack_enabled; /* enable hardware ACK on all pipes */
 } nrf24_config_t;
 
 /** Opaque handle to an initialized radio instance. */
-typedef struct nrf24_dev *nrf24_handle_t;
+typedef struct nrf24_dev* nrf24_handle_t;
 
 /**
  * @brief Initialize the SPI bus/device and the nRF24L01+ radio.
@@ -93,7 +94,7 @@ typedef struct nrf24_dev *nrf24_handle_t;
  * If another device already shares the given SPI host/bus, spi_bus_initialize()
  * returning ESP_ERR_INVALID_STATE is treated as non-fatal (bus already up).
  */
-esp_err_t nrf24_init(const nrf24_config_t *config, nrf24_handle_t *out_handle);
+esp_err_t nrf24_init(const nrf24_config_t* config, nrf24_handle_t* out_handle);
 
 /** @brief Remove the SPI device and free driver resources. Does not call
  *         spi_bus_free() since other devices may share the bus. */
@@ -118,16 +119,15 @@ esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate);
  * shared with pipe 1's address (this is nRF24L01+ hardware behavior, not a
  * driver limitation) — pass a 1-byte address for pipes 2-5.
  */
-esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe,
-                                const uint8_t *address, uint8_t address_len);
+esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe, const uint8_t* address,
+                               uint8_t address_len);
 
 /**
  * @brief Set the TX destination address. Also programs pipe 0's RX address
  *        to match, which is required by the hardware so this device can
  *        receive the auto-ack response from the recipient.
  */
-esp_err_t nrf24_set_tx_address(nrf24_handle_t handle, const uint8_t *address,
-                                uint8_t address_len);
+esp_err_t nrf24_set_tx_address(nrf24_handle_t handle, const uint8_t* address, uint8_t address_len);
 
 /** @brief Enter RX mode (CE high, PRIM_RX set). */
 esp_err_t nrf24_start_listening(nrf24_handle_t handle);
@@ -141,13 +141,13 @@ esp_err_t nrf24_stop_listening(nrf24_handle_t handle);
  *                 (0-5), or 0xFF if it could not be determined.
  * @return true if a payload is waiting in the RX FIFO.
  */
-bool nrf24_available(nrf24_handle_t handle, uint8_t *pipe_num);
+bool nrf24_available(nrf24_handle_t handle, uint8_t* pipe_num);
 
 /**
  * @brief Read one payload from the RX FIFO into buf.
  * @param buf Must point to at least config->payload_size bytes.
  */
-esp_err_t nrf24_read(nrf24_handle_t handle, void *buf);
+esp_err_t nrf24_read(nrf24_handle_t handle, void* buf);
 
 /**
  * @brief Transmit one payload to the configured TX address, blocking until
@@ -162,7 +162,7 @@ esp_err_t nrf24_read(nrf24_handle_t handle, void *buf);
  *           (peer unreachable / no ACK received) — TX FIFO is flushed.
  *         ESP_ERR_TIMEOUT if timeout_ticks elapsed before either outcome.
  */
-esp_err_t nrf24_write(nrf24_handle_t handle, const void *buf, TickType_t timeout_ticks);
+esp_err_t nrf24_write(nrf24_handle_t handle, const void* buf, TickType_t timeout_ticks);
 
 esp_err_t nrf24_flush_rx(nrf24_handle_t handle);
 esp_err_t nrf24_flush_tx(nrf24_handle_t handle);
@@ -175,7 +175,7 @@ esp_err_t nrf24_power_down(nrf24_handle_t handle);
 esp_err_t nrf24_power_up(nrf24_handle_t handle);
 
 /** @brief Read the raw STATUS register — useful for diagnostics/logging. */
-esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t *status);
+esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status);
 
 /**
  * @brief Read the OBSERVE_TX register: lost-packet and retransmit counters.
@@ -183,8 +183,8 @@ esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t *status);
  *        (RF_CH) is rewritten. Useful as an early "degraded link" signal —
  *        see the fault-evaluation subsystem design.
  */
-esp_err_t nrf24_get_observe_tx(nrf24_handle_t handle, uint8_t *lost_packet_count,
-                                uint8_t *retransmit_count);
+esp_err_t nrf24_get_observe_tx(nrf24_handle_t handle, uint8_t* lost_packet_count,
+                               uint8_t* retransmit_count);
 
 #ifdef __cplusplus
 }

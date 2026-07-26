@@ -4,63 +4,64 @@
  *        disclaimer. This file has not been compiled or hardware-tested.
  */
 
-#include <string.h>
-#include <stdlib.h>
-
 #include "../include/nrf24l01.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 #include "driver/gpio.h"
-#include "esp_rom_sys.h"   /* esp_rom_delay_us() */
+#include "esp_rom_sys.h" /* esp_rom_delay_us() */
 
 /* ---------------------------------------------------------------------- */
 /* SPI command bytes                                                      */
 /* ---------------------------------------------------------------------- */
-#define CMD_R_REGISTER      0x00   /* OR with 5-bit register address */
-#define CMD_W_REGISTER      0x20   /* OR with 5-bit register address */
-#define CMD_R_RX_PAYLOAD    0x61
-#define CMD_W_TX_PAYLOAD    0xA0
-#define CMD_FLUSH_TX        0xE1
-#define CMD_FLUSH_RX        0xE2
-#define CMD_NOP             0xFF
+#define CMD_R_REGISTER   0x00 /* OR with 5-bit register address */
+#define CMD_W_REGISTER   0x20 /* OR with 5-bit register address */
+#define CMD_R_RX_PAYLOAD 0x61
+#define CMD_W_TX_PAYLOAD 0xA0
+#define CMD_FLUSH_TX     0xE1
+#define CMD_FLUSH_RX     0xE2
+#define CMD_NOP          0xFF
 
 /* ---------------------------------------------------------------------- */
 /* Register addresses                                                     */
 /* ---------------------------------------------------------------------- */
-#define REG_CONFIG          0x00
-#define REG_EN_AA           0x01
-#define REG_EN_RXADDR       0x02
-#define REG_SETUP_AW        0x03
-#define REG_SETUP_RETR      0x04
-#define REG_RF_CH           0x05
-#define REG_RF_SETUP        0x06
-#define REG_STATUS          0x07
-#define REG_OBSERVE_TX      0x08
-#define REG_RX_ADDR_P0      0x0A
-#define REG_RX_ADDR_P1      0x0B
-#define REG_RX_ADDR_P2      0x0C
-#define REG_RX_ADDR_P3      0x0D
-#define REG_RX_ADDR_P4      0x0E
-#define REG_RX_ADDR_P5      0x0F
-#define REG_TX_ADDR         0x10
-#define REG_RX_PW_P0        0x11
-#define REG_RX_PW_P1        0x12
-#define REG_RX_PW_P2        0x13
-#define REG_RX_PW_P3        0x14
-#define REG_RX_PW_P4        0x15
-#define REG_RX_PW_P5        0x16
-#define REG_FIFO_STATUS     0x17
+#define REG_CONFIG      0x00
+#define REG_EN_AA       0x01
+#define REG_EN_RXADDR   0x02
+#define REG_SETUP_AW    0x03
+#define REG_SETUP_RETR  0x04
+#define REG_RF_CH       0x05
+#define REG_RF_SETUP    0x06
+#define REG_STATUS      0x07
+#define REG_OBSERVE_TX  0x08
+#define REG_RX_ADDR_P0  0x0A
+#define REG_RX_ADDR_P1  0x0B
+#define REG_RX_ADDR_P2  0x0C
+#define REG_RX_ADDR_P3  0x0D
+#define REG_RX_ADDR_P4  0x0E
+#define REG_RX_ADDR_P5  0x0F
+#define REG_TX_ADDR     0x10
+#define REG_RX_PW_P0    0x11
+#define REG_RX_PW_P1    0x12
+#define REG_RX_PW_P2    0x13
+#define REG_RX_PW_P3    0x14
+#define REG_RX_PW_P4    0x15
+#define REG_RX_PW_P5    0x16
+#define REG_FIFO_STATUS 0x17
 
 /* ---------------------------------------------------------------------- */
 /* Bit masks                                                               */
 /* ---------------------------------------------------------------------- */
-#define CONFIG_EN_CRC        (1 << 3)
-#define CONFIG_CRCO          (1 << 2)
-#define CONFIG_PWR_UP        (1 << 1)
-#define CONFIG_PRIM_RX       (1 << 0)
+#define CONFIG_EN_CRC  (1 << 3)
+#define CONFIG_CRCO    (1 << 2)
+#define CONFIG_PWR_UP  (1 << 1)
+#define CONFIG_PRIM_RX (1 << 0)
 
-#define STATUS_RX_DR         (1 << 6)
-#define STATUS_TX_DS         (1 << 5)
-#define STATUS_MAX_RT        (1 << 4)
-#define STATUS_RX_P_NO_MASK  0x0E
+#define STATUS_RX_DR        (1 << 6)
+#define STATUS_TX_DS        (1 << 5)
+#define STATUS_MAX_RT       (1 << 4)
+#define STATUS_RX_P_NO_MASK 0x0E
 
 #define FIFO_STATUS_RX_EMPTY (1 << 0)
 
@@ -87,13 +88,12 @@ struct nrf24_dev {
 /* ---------------------------------------------------------------------- */
 
 static inline void ce_high(nrf24_handle_t h) { gpio_set_level(h->pin_ce, 1); }
-static inline void ce_low(nrf24_handle_t h)  { gpio_set_level(h->pin_ce, 0); }
+static inline void ce_low(nrf24_handle_t h) { gpio_set_level(h->pin_ce, 0); }
 
 /* Full-duplex SPI transaction. tx/rx must each be `len` bytes; rx[0] always
  * receives the STATUS register (returned by the chip during the command
  * byte's transfer, per nRF24L01+ SPI protocol). */
-static esp_err_t spi_txn(nrf24_handle_t h, const uint8_t *tx, uint8_t *rx, size_t len)
-{
+static esp_err_t spi_txn(nrf24_handle_t h, const uint8_t* tx, uint8_t* rx, size_t len) {
     if (len == 0 || len > (NRF24_MAX_PAYLOAD_SIZE + 1)) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -104,8 +104,7 @@ static esp_err_t spi_txn(nrf24_handle_t h, const uint8_t *tx, uint8_t *rx, size_
     return spi_device_polling_transmit(h->spi, &t);
 }
 
-static esp_err_t read_register(nrf24_handle_t h, uint8_t reg, uint8_t *data, uint8_t len)
-{
+static esp_err_t read_register(nrf24_handle_t h, uint8_t reg, uint8_t* data, uint8_t len) {
     uint8_t tx[1 + NRF24_MAX_PAYLOAD_SIZE] = {0};
     uint8_t rx[1 + NRF24_MAX_PAYLOAD_SIZE] = {0};
     tx[0] = CMD_R_REGISTER | (reg & 0x1F);
@@ -116,8 +115,7 @@ static esp_err_t read_register(nrf24_handle_t h, uint8_t reg, uint8_t *data, uin
     return err;
 }
 
-static esp_err_t write_register(nrf24_handle_t h, uint8_t reg, const uint8_t *data, uint8_t len)
-{
+static esp_err_t write_register(nrf24_handle_t h, uint8_t reg, const uint8_t* data, uint8_t len) {
     uint8_t tx[1 + NRF24_MAX_PAYLOAD_SIZE] = {0};
     uint8_t rx[1 + NRF24_MAX_PAYLOAD_SIZE] = {0};
     tx[0] = CMD_W_REGISTER | (reg & 0x1F);
@@ -125,20 +123,17 @@ static esp_err_t write_register(nrf24_handle_t h, uint8_t reg, const uint8_t *da
     return spi_txn(h, tx, rx, (size_t)len + 1);
 }
 
-static esp_err_t read_register_byte(nrf24_handle_t h, uint8_t reg, uint8_t *value)
-{
+static esp_err_t read_register_byte(nrf24_handle_t h, uint8_t reg, uint8_t* value) {
     return read_register(h, reg, value, 1);
 }
 
-static esp_err_t write_register_byte(nrf24_handle_t h, uint8_t reg, uint8_t value)
-{
+static esp_err_t write_register_byte(nrf24_handle_t h, uint8_t reg, uint8_t value) {
     return write_register(h, reg, &value, 1);
 }
 
-static esp_err_t send_command(nrf24_handle_t h, uint8_t cmd, uint8_t *status_out)
-{
-    uint8_t tx[1] = { cmd };
-    uint8_t rx[1] = { 0 };
+static esp_err_t send_command(nrf24_handle_t h, uint8_t cmd, uint8_t* status_out) {
+    uint8_t tx[1] = {cmd};
+    uint8_t rx[1] = {0};
     esp_err_t err = spi_txn(h, tx, rx, 1);
     if (err == ESP_OK && status_out) {
         *status_out = rx[0];
@@ -150,8 +145,7 @@ static esp_err_t send_command(nrf24_handle_t h, uint8_t cmd, uint8_t *status_out
 /* Public API                                                              */
 /* ---------------------------------------------------------------------- */
 
-esp_err_t nrf24_init(const nrf24_config_t *config, nrf24_handle_t *out_handle)
-{
+esp_err_t nrf24_init(const nrf24_config_t* config, nrf24_handle_t* out_handle) {
     if (!config || !out_handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -166,7 +160,7 @@ esp_err_t nrf24_init(const nrf24_config_t *config, nrf24_handle_t *out_handle)
         return ESP_ERR_INVALID_ARG;
     }
 
-    struct nrf24_dev *h = calloc(1, sizeof(struct nrf24_dev));
+    struct nrf24_dev* h = calloc(1, sizeof(struct nrf24_dev));
     if (!h) {
         return ESP_ERR_NO_MEM;
     }
@@ -221,8 +215,7 @@ esp_err_t nrf24_init(const nrf24_config_t *config, nrf24_handle_t *out_handle)
     err = write_register_byte(h, REG_CONFIG, 0x00);
     if (err != ESP_OK) goto fail;
 
-    uint8_t setup_retr = ((config->retry_delay_x250us & 0x0F) << 4) |
-                          (config->retry_count & 0x0F);
+    uint8_t setup_retr = ((config->retry_delay_x250us & 0x0F) << 4) | (config->retry_count & 0x0F);
     err = write_register_byte(h, REG_SETUP_RETR, setup_retr);
     if (err != ESP_OK) goto fail;
 
@@ -231,8 +224,12 @@ esp_err_t nrf24_init(const nrf24_config_t *config, nrf24_handle_t *out_handle)
 
     uint8_t rf_setup = 0;
     switch (config->data_rate) {
-        case NRF24_DATARATE_250KBPS: rf_setup |= RF_SETUP_RF_DR_LOW; break;
-        case NRF24_DATARATE_2MBPS:   rf_setup |= RF_SETUP_RF_DR_HIGH; break;
+        case NRF24_DATARATE_250KBPS:
+            rf_setup |= RF_SETUP_RF_DR_LOW;
+            break;
+        case NRF24_DATARATE_2MBPS:
+            rf_setup |= RF_SETUP_RF_DR_HIGH;
+            break;
         case NRF24_DATARATE_1MBPS:
         default:
             break; /* both rate bits 0 == 1Mbps */
@@ -283,8 +280,7 @@ fail:
     return err;
 }
 
-esp_err_t nrf24_deinit(nrf24_handle_t handle)
-{
+esp_err_t nrf24_deinit(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -294,8 +290,7 @@ esp_err_t nrf24_deinit(nrf24_handle_t handle)
     return err;
 }
 
-bool nrf24_is_chip_connected(nrf24_handle_t handle)
-{
+bool nrf24_is_chip_connected(nrf24_handle_t handle) {
     if (!handle) {
         return false;
     }
@@ -310,16 +305,14 @@ bool nrf24_is_chip_connected(nrf24_handle_t handle)
     return (aw_bits >= 1 && aw_bits <= 3);
 }
 
-esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel)
-{
+esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel) {
     if (!handle || channel > 125) {
         return ESP_ERR_INVALID_ARG;
     }
     return write_register_byte(handle, REG_RF_CH, channel);
 }
 
-esp_err_t nrf24_set_pa_level(nrf24_handle_t handle, nrf24_pa_level_t level)
-{
+esp_err_t nrf24_set_pa_level(nrf24_handle_t handle, nrf24_pa_level_t level) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -328,13 +321,11 @@ esp_err_t nrf24_set_pa_level(nrf24_handle_t handle, nrf24_pa_level_t level)
     if (err != ESP_OK) {
         return err;
     }
-    rf_setup = (rf_setup & ~RF_SETUP_RF_PWR_MASK) |
-               ((uint8_t)(level << 1) & RF_SETUP_RF_PWR_MASK);
+    rf_setup = (rf_setup & ~RF_SETUP_RF_PWR_MASK) | ((uint8_t)(level << 1) & RF_SETUP_RF_PWR_MASK);
     return write_register_byte(handle, REG_RF_SETUP, rf_setup);
 }
 
-esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate)
-{
+esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -345,8 +336,12 @@ esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate)
     }
     rf_setup &= ~(RF_SETUP_RF_DR_LOW | RF_SETUP_RF_DR_HIGH);
     switch (rate) {
-        case NRF24_DATARATE_250KBPS: rf_setup |= RF_SETUP_RF_DR_LOW; break;
-        case NRF24_DATARATE_2MBPS:   rf_setup |= RF_SETUP_RF_DR_HIGH; break;
+        case NRF24_DATARATE_250KBPS:
+            rf_setup |= RF_SETUP_RF_DR_LOW;
+            break;
+        case NRF24_DATARATE_2MBPS:
+            rf_setup |= RF_SETUP_RF_DR_HIGH;
+            break;
         case NRF24_DATARATE_1MBPS:
         default:
             break;
@@ -354,9 +349,8 @@ esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate)
     return write_register_byte(handle, REG_RF_SETUP, rf_setup);
 }
 
-esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe,
-                                const uint8_t *address, uint8_t address_len)
-{
+esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe, const uint8_t* address,
+                               uint8_t address_len) {
     if (handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -372,8 +366,7 @@ esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe,
         REG_RX_ADDR_P3, REG_RX_ADDR_P4, REG_RX_ADDR_P5,
     };
     static const uint8_t pipe_pw_reg[NRF24_PIPE_COUNT] = {
-        REG_RX_PW_P0, REG_RX_PW_P1, REG_RX_PW_P2,
-        REG_RX_PW_P3, REG_RX_PW_P4, REG_RX_PW_P5,
+        REG_RX_PW_P0, REG_RX_PW_P1, REG_RX_PW_P2, REG_RX_PW_P3, REG_RX_PW_P4, REG_RX_PW_P5,
     };
 
     esp_err_t err;
@@ -408,8 +401,7 @@ esp_err_t nrf24_set_rx_address(nrf24_handle_t handle, uint8_t pipe,
     return write_register_byte(handle, pipe_pw_reg[pipe], handle->payload_size);
 }
 
-esp_err_t nrf24_set_tx_address(nrf24_handle_t handle, const uint8_t *address, uint8_t address_len)
-{
+esp_err_t nrf24_set_tx_address(nrf24_handle_t handle, const uint8_t* address, uint8_t address_len) {
     if (!handle || !address || address_len != handle->address_width) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -422,8 +414,7 @@ esp_err_t nrf24_set_tx_address(nrf24_handle_t handle, const uint8_t *address, ui
     return write_register(handle, REG_RX_ADDR_P0, address, address_len);
 }
 
-esp_err_t nrf24_start_listening(nrf24_handle_t handle)
-{
+esp_err_t nrf24_start_listening(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -447,8 +438,7 @@ esp_err_t nrf24_start_listening(nrf24_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t nrf24_stop_listening(nrf24_handle_t handle)
-{
+esp_err_t nrf24_stop_listening(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -464,8 +454,7 @@ esp_err_t nrf24_stop_listening(nrf24_handle_t handle)
     return err;
 }
 
-bool nrf24_available(nrf24_handle_t handle, uint8_t *pipe_num)
-{
+bool nrf24_available(nrf24_handle_t handle, uint8_t* pipe_num) {
     if (!handle) {
         return false;
     }
@@ -487,8 +476,7 @@ bool nrf24_available(nrf24_handle_t handle, uint8_t *pipe_num)
     return true;
 }
 
-esp_err_t nrf24_read(nrf24_handle_t handle, void *buf)
-{
+esp_err_t nrf24_read(nrf24_handle_t handle, void* buf) {
     if (!handle || !buf) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -506,8 +494,7 @@ esp_err_t nrf24_read(nrf24_handle_t handle, void *buf)
     return write_register_byte(handle, REG_STATUS, STATUS_RX_DR);
 }
 
-esp_err_t nrf24_write(nrf24_handle_t handle, const void *buf, TickType_t timeout_ticks)
-{
+esp_err_t nrf24_write(nrf24_handle_t handle, const void* buf, TickType_t timeout_ticks) {
     if (!handle || !buf) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -555,8 +542,7 @@ esp_err_t nrf24_write(nrf24_handle_t handle, const void *buf, TickType_t timeout
             result = ESP_FAIL;
             break;
         }
-        if (timeout_ticks != portMAX_DELAY &&
-            (xTaskGetTickCount() - start) >= timeout_ticks) {
+        if (timeout_ticks != portMAX_DELAY && (xTaskGetTickCount() - start) >= timeout_ticks) {
             break; /* result stays ESP_ERR_TIMEOUT */
         }
         vTaskDelay(1);
@@ -568,24 +554,21 @@ esp_err_t nrf24_write(nrf24_handle_t handle, const void *buf, TickType_t timeout
     return result;
 }
 
-esp_err_t nrf24_flush_rx(nrf24_handle_t handle)
-{
+esp_err_t nrf24_flush_rx(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_FLUSH_RX, NULL);
 }
 
-esp_err_t nrf24_flush_tx(nrf24_handle_t handle)
-{
+esp_err_t nrf24_flush_tx(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_FLUSH_TX, NULL);
 }
 
-esp_err_t nrf24_power_down(nrf24_handle_t handle)
-{
+esp_err_t nrf24_power_down(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -599,8 +582,7 @@ esp_err_t nrf24_power_down(nrf24_handle_t handle)
     return write_register_byte(handle, REG_CONFIG, config_reg);
 }
 
-esp_err_t nrf24_power_up(nrf24_handle_t handle)
-{
+esp_err_t nrf24_power_up(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -622,17 +604,15 @@ esp_err_t nrf24_power_up(nrf24_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t *status)
-{
+esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status) {
     if (!handle || !status) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_NOP, status);
 }
 
-esp_err_t nrf24_get_observe_tx(nrf24_handle_t handle, uint8_t *lost_packet_count,
-                                uint8_t *retransmit_count)
-{
+esp_err_t nrf24_get_observe_tx(nrf24_handle_t handle, uint8_t* lost_packet_count,
+                               uint8_t* retransmit_count) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
