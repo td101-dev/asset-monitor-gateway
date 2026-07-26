@@ -7,8 +7,9 @@ on:
   push:
     paths:
       - 'firmware/**'
+      - '.github/workflows/firmware-ci.yaml'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'firmware/**'
 
@@ -100,7 +101,7 @@ jobs:
         with:
           esp_idf_version: ${{ env.IDF_VERSION }}
           target: ${{ matrix.target }}
-          working-directory: firmware
+          path: firmware
           command: |
             idf.py set-target ${{ matrix.target }}
             idf.py -DCMAKE_BUILD_TYPE=Debug build
@@ -131,7 +132,7 @@ jobs:
         with:
           esp_idf_version: ${{ env.IDF_VERSION }}
           target: ${{ matrix.target }}
-          working-directory: firmware
+          path: firmware
           command: |
             idf.py set-target ${{ matrix.target }}
             idf.py -DCMAKE_BUILD_TYPE=Release build
