@@ -6,24 +6,26 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
+
+#include "driver/gpio.h"
+#include "driver/spi_master.h"
+#include "esp_log.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
-#include "driver/spi_master.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
 #include "nrf24l01.h"
 
-static const char *TAG = "nrf24_example";
+static const char* TAG = "nrf24_example";
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////// Please update the following configuration according to your HardWare spec /////////////////
+////////////// Please update the following configuration according to your HardWare spec
+////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define NRF24_SPI_HOST    SPI2_HOST
+#define NRF24_SPI_HOST SPI2_HOST
 
 #define PIN_NUM_MISO 19
 #define PIN_NUM_MOSI 23
@@ -31,8 +33,7 @@ static const char *TAG = "nrf24_example";
 #define PIN_NUM_CS   4
 #define PIN_NUM_CE   5
 
-void app_main(void)
-{
+void app_main(void) {
     esp_err_t ret;
 
     nrf24_config_t nrf24_config = {
@@ -42,7 +43,7 @@ void app_main(void)
         PIN_NUM_MOSI,
         PIN_NUM_CS,
         PIN_NUM_CE,
-        4 * 1000 * 1000,     //Clock out at 4 MHz
+        4 * 1000 * 1000,  // Clock out at 4 MHz
         115,
         32,
         5,
@@ -53,11 +54,11 @@ void app_main(void)
         15,
         false,
     };
-    //Initialise the radio
+    // Initialise the radio
     nrf24_handle_t radio;
 
     ret = nrf24_init(&nrf24_config, &radio);
-        if (ret != ESP_OK) {
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG, "nrf24_init failed: %s", esp_err_to_name(ret));
         return;
     }
@@ -75,7 +76,7 @@ void app_main(void)
     // nrf24_stop_listening(radio);
 
     // uint8_t payload[32] = {0xAB};
-    
+
     // while (1)
     // {
     //     ESP_LOGI(TAG, "Transmitting data ...");
@@ -91,7 +92,6 @@ void app_main(void)
     while (1) {
         uint8_t pipe;
         if (nrf24_available(radio, &pipe)) {
-
             if (nrf24_read(radio, buf) == ESP_OK) {
                 ESP_LOGI(TAG, "Received %d bytes on pipe %d", nrf24_config.payload_size, pipe);
                 ESP_LOG_BUFFER_HEX(TAG, buf, 8);
