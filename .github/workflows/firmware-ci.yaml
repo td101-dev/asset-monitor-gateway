@@ -35,6 +35,7 @@ jobs:
 
       - name: Run cppcheck (static analysis)
         run: |
+          cppcheck --version
           cppcheck --enable=all --error-exitcode=1 \
             --suppress=missingIncludeSystem \
             --suppress=missingInclude \

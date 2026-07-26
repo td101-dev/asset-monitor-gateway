@@ -439,7 +439,6 @@ esp_err_t nrf24_start_listening(nrf24_handle_t handle) {
     return ESP_OK;
 }
 
-// cppcheck-suppress staticFunction
 esp_err_t nrf24_stop_listening(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
