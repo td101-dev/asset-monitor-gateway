@@ -107,7 +107,7 @@ esp_err_t nrf24_deinit(nrf24_handle_t handle);
  */
 bool nrf24_is_chip_connected(nrf24_handle_t handle);
 
-esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel);
+static esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel);
 esp_err_t nrf24_set_pa_level(nrf24_handle_t handle, nrf24_pa_level_t level);
 esp_err_t nrf24_set_data_rate(nrf24_handle_t handle, nrf24_datarate_t rate);
 
@@ -164,18 +164,18 @@ esp_err_t nrf24_read(nrf24_handle_t handle, void* buf);
  */
 esp_err_t nrf24_write(nrf24_handle_t handle, const void* buf, TickType_t timeout_ticks);
 
-esp_err_t nrf24_flush_rx(nrf24_handle_t handle);
-esp_err_t nrf24_flush_tx(nrf24_handle_t handle);
+static esp_err_t nrf24_flush_rx(nrf24_handle_t handle);
+static esp_err_t nrf24_flush_tx(nrf24_handle_t handle);
 
 /** @brief Power down the radio (lowest power state; register config is retained). */
 esp_err_t nrf24_power_down(nrf24_handle_t handle);
 
 /** @brief Power the radio back up. Includes the datasheet-required settle
  *         delay for the crystal oscillator before returning. */
-esp_err_t nrf24_power_up(nrf24_handle_t handle);
+static esp_err_t nrf24_power_up(nrf24_handle_t handle);
 
 /** @brief Read the raw STATUS register — useful for diagnostics/logging. */
-esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status);
+static esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status);
 
 /**
  * @brief Read the OBSERVE_TX register: lost-packet and retransmit counters.

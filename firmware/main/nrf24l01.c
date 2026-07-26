@@ -132,7 +132,7 @@ static esp_err_t write_register_byte(nrf24_handle_t h, uint8_t reg, uint8_t valu
 }
 
 static esp_err_t send_command(nrf24_handle_t h, uint8_t cmd, uint8_t* status_out) {
-    uint8_t tx[1] = {cmd};
+    const uint8_t tx[1] = {cmd};
     uint8_t rx[1] = {0};
     esp_err_t err = spi_txn(h, tx, rx, 1);
     if (err == ESP_OK && status_out) {
@@ -280,6 +280,7 @@ fail:
     return err;
 }
 
+// cppcheck-suppress unusedFunction
 esp_err_t nrf24_deinit(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -305,7 +306,7 @@ bool nrf24_is_chip_connected(nrf24_handle_t handle) {
     return (aw_bits >= 1 && aw_bits <= 3);
 }
 
-esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel) {
+static esp_err_t nrf24_set_channel(nrf24_handle_t handle, uint8_t channel) {
     if (!handle || channel > 125) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -438,6 +439,7 @@ esp_err_t nrf24_start_listening(nrf24_handle_t handle) {
     return ESP_OK;
 }
 
+// cppcheck-suppress staticFunction
 esp_err_t nrf24_stop_listening(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -494,6 +496,7 @@ esp_err_t nrf24_read(nrf24_handle_t handle, void* buf) {
     return write_register_byte(handle, REG_STATUS, STATUS_RX_DR);
 }
 
+// cppcheck-suppress unusedFunction
 esp_err_t nrf24_write(nrf24_handle_t handle, const void* buf, TickType_t timeout_ticks) {
     if (!handle || !buf) {
         return ESP_ERR_INVALID_ARG;
@@ -554,20 +557,21 @@ esp_err_t nrf24_write(nrf24_handle_t handle, const void* buf, TickType_t timeout
     return result;
 }
 
-esp_err_t nrf24_flush_rx(nrf24_handle_t handle) {
+static esp_err_t nrf24_flush_rx(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_FLUSH_RX, NULL);
 }
 
-esp_err_t nrf24_flush_tx(nrf24_handle_t handle) {
+static esp_err_t nrf24_flush_tx(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_FLUSH_TX, NULL);
 }
 
+// cppcheck-suppress unusedFunction
 esp_err_t nrf24_power_down(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -582,7 +586,7 @@ esp_err_t nrf24_power_down(nrf24_handle_t handle) {
     return write_register_byte(handle, REG_CONFIG, config_reg);
 }
 
-esp_err_t nrf24_power_up(nrf24_handle_t handle) {
+static esp_err_t nrf24_power_up(nrf24_handle_t handle) {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -604,13 +608,14 @@ esp_err_t nrf24_power_up(nrf24_handle_t handle) {
     return ESP_OK;
 }
 
-esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status) {
+static esp_err_t nrf24_get_status(nrf24_handle_t handle, uint8_t* status) {
     if (!handle || !status) {
         return ESP_ERR_INVALID_ARG;
     }
     return send_command(handle, CMD_NOP, status);
 }
 
+// cppcheck-suppress unusedFunction
 esp_err_t nrf24_get_observe_tx(nrf24_handle_t handle, uint8_t* lost_packet_count,
                                uint8_t* retransmit_count) {
     if (!handle) {

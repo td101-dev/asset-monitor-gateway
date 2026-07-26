@@ -33,6 +33,7 @@ static const char* TAG = "nrf24_example";
 #define PIN_NUM_CS   4
 #define PIN_NUM_CE   5
 
+// cppcheck-suppress unusedFunction
 void app_main(void) {
     esp_err_t ret;
 
@@ -65,12 +66,14 @@ void app_main(void) {
 
     nrf24_set_pa_level(&radio, NRF24_PA_HIGH);
 
+    nrf24_set_data_rate(&radio, NRF24_DATARATE_1MBPS);
+
     if (!nrf24_is_chip_connected(radio)) {
         ESP_LOGE(TAG, "nRF24L01+ not responding on SPI — check wiring/power");
         return;
     }
 
-    uint8_t address[5] = {0xe1, 0xe1, 0xe1, 0xe1, 0xe1};
+    const uint8_t address[5] = {0xe1, 0xe1, 0xe1, 0xe1, 0xe1};
     nrf24_set_rx_address(radio, 0, address, 5);
     nrf24_set_tx_address(radio, address, 5);
     nrf24_start_listening(radio);
