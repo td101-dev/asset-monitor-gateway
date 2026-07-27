@@ -1,0 +1,41 @@
+:project:
+  :use_exceptions: FALSE
+  :use_test_preprocessor: TRUE
+  :use_auxiliary_dependencies: TRUE
+  :build_root: build
+
+:paths:
+  :test:
+    - +:test/**
+  :source:
+    - +:main
+  :include:
+    - main
+    - $IDF_PATH/components/driver/include
+    - $IDF_PATH/components/esp_common/include
+    - $IDF_PATH/components/esp_hw_support/include
+    - $IDF_PATH/components/freertos/FreeRTOS-Kernel/include/freertos
+    - $IDF_PATH/components/esp_rom/include
+
+:defines:
+  :test:
+    - UNITY_INCLUDE_CONFIG_H
+
+:cmock:
+  :mock_prefix: mock_
+  :when_no_prototypes: :warn
+  :treat_as:
+    uint8_t: HEX8
+    uint32_t: HEX32
+
+:tools_test_compiler:
+  :arguments:
+    - -DESP_PLATFORM
+
+# Only mock the headers whose functions nrf24l01.c actually calls.
+# Point at the REAL ESP-IDF headers, not hand-written stubs, so signatures
+# are guaranteed correct.
+:mocks:
+  - $IDF_PATH/components/driver/include/driver/spi_master.h
+  - $IDF_PATH/components/driver/include/driver/gpio.h
+  - $IDF_PATH/components/esp_rom/include/esp_rom_sys.h
