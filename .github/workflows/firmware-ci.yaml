@@ -14,7 +14,7 @@ on:
       - 'firmware/**'
 
 env:
-  IDF_VERSION: v5.2
+  IDF_VERSION: v5.5.4
   WORKING_DIR: firmware
 
 jobs:

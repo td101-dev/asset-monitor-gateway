@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "include/nrf24l01.h"
+#include "nrf24l01.h"
 
 void setUp(void) {}
 void tearDown(void) {}
