@@ -4,7 +4,7 @@
  *        disclaimer. This file has not been compiled or hardware-tested.
  */
 
-#include "../include/nrf24l01.h"
+#include "nrf24l01.h"
 
 #include <stdlib.h>
 #include <string.h>

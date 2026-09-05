@@ -17,7 +17,7 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "nrf24l01.h"
+#include "drivers/nrf24l01.h"
 
 static const char* TAG = "nrf24_example";
 
