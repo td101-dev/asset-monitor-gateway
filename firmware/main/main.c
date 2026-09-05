@@ -13,11 +13,11 @@
 
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "drivers/nrf24l01.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "drivers/nrf24l01.h"
 
 static const char* TAG = "nrf24_example";
 
