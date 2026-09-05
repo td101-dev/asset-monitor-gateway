@@ -19,9 +19,11 @@
 
   :source:
     - main
+    - main/drivers
 
   :include:
     - main/include
+    - main/drivers
 
 :defines:
 
