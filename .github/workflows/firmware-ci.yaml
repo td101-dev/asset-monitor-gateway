@@ -192,7 +192,8 @@ jobs:
       - name: Install Ceedling / Ruby
         run: |
           sudo apt-get update && sudo apt-get install -y ruby ruby-dev build-essential
-          gem install ceedling
+          gem install --user-install ceedling
+          echo "$(ruby -e 'puts Gem.user_dir')/bin" >> $GITHUB_PATH
 
       - name: Run unit tests with coverage
         run: |
